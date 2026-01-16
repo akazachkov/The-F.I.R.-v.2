@@ -68,7 +68,7 @@ class NameNewModule(BaseModule):
             text='Открыть папку',
             command=lambda: open_file_and_folder(
                 f"{config_p_n["path_data"]}")  # Указываем папку для открытия
-            )
+        )
         button_open_data.pack(pady=10)
 
         button_rrp_tracker = tk.Button(
@@ -76,5 +76,5 @@ class NameNewModule(BaseModule):
             text='Открыть файл',
             command=lambda: open_file_and_folder(
                 f"{config_p_n["readmy"]}")  # Указываем файл для открытия
-            )
+        )
         button_rrp_tracker.pack(pady=10)

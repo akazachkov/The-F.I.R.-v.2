@@ -13,6 +13,7 @@ class CalculatorModule(BaseModule):
     module_label = (
         "Описание функционала модуля - калькулятор, умеющий только умножать"
     )
+    width_frame = 350
 
     @classmethod
     def initialize_frame(cls, parent_frame: tk.Frame) -> None:
@@ -30,9 +31,10 @@ class CalculatorModule(BaseModule):
             parent_frame,
             text="Умножить",
             command=lambda: result_var.set(
-                f"Произведение: {float(input_var1.get()) * float(
-                    input_var2.get())}"
-                )
-            ).pack(pady=10)
+                f"Произведение: {
+                    int(input_var1.get()) * int(input_var2.get())
+                }"
+            )
+        ).pack(pady=10)
 
         tk.Label(parent_frame, textvariable=result_var).pack()

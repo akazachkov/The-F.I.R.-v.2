@@ -15,6 +15,9 @@ class NameNewModule(BaseModule):
     module_label = "pattern"  # Описание - отображается в верхней части фрейма
     # модуля
 
+    width_frame = 350  # Указываем, если требуется фиксированная ширина для
+    # всего фрейма. Иначе - закомментировать строку.
+
     @classmethod
     def initialize_frame(cls, parent_frame: tk.Frame) -> None:
         """

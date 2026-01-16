@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Dict, Type, List
 
 from .module_loader import import_modules, BaseModule
-from config.app_config import APP_TITLE, MODULES_DIR
+from config.app_config import APP_TITLE, MODULES_DIR, MAX_CONCURRENT_MODULES
 from gui.main_module import MainModuleUI
 
 
@@ -16,19 +16,19 @@ class AppController:
         self.app_title = APP_TITLE
         self.loaded_modules: Dict[str, Type[BaseModule]] = {}
 
-        # --- АТРИБУТЫ ДЛЯ УПРАВЛЕНИЯ СЕМАФОРОМ ---
-        # 1. Семафор с тремя "разрешениями" на запуск
-        self.module_semaphore = threading.Semaphore(3)
-        # 2. Очередь для передачи команд в GUI-поток
+        # --- Атрибуты для управления семафором ---
+        # 1. Семафор с определенным количеством "разрешений" на запуск.
+        self.module_semaphore = threading.Semaphore(MAX_CONCURRENT_MODULES)
+        # 2. Очередь для передачи команд в GUI-поток.
         self.command_queue: queue.Queue = queue.Queue()
-        # 3. Список для хранения всех активных фреймов модулей
+        # 3. Список для хранения всех активных фреймов модулей.
         self.pinned_module_frames: List[ttk.Frame] = []
 
-        # 4. Ссылка на класс, отвечающий за UI
+        # 4. Ссылка на класс, отвечающий за UI.
         self.ui_handler: MainModuleUI | None = None
-        self.main_window: tk.Tk | None = None  # Явно инициализируем
+        self.main_window: tk.Tk | None = None  # Явно инициализируем.
 
-        # Начинаем обработку очереди в фоновом режиме
+        # Начинаем обработку очереди в фоновом режиме.
         self._start_queue_processor()
 
     def _start_queue_processor(self):
@@ -59,17 +59,17 @@ class AppController:
         """
         Создает UI для модулей.
         """
-        # Создаем делегат UI и передаем ему фреймы
-        self.ui_handler = MainModuleUI(modules_frame, content_frame)
+        # Создаем делегат UI и передаем ему фреймы.
+        self.ui_handler = MainModuleUI(modules_frame, content_frame, self)
 
         self.loaded_modules = import_modules(MODULES_DIR)
         for module_name, module_class in self.loaded_modules.items():
-            # Используем делегат для создания UI-компонентов
+            # Используем делегат для создания UI-компонентов.
             # Передаем ему ссылку на метод-обработчик, чтобы кнопка знала, что
-            # вызывать
+            # вызывать.
             self.ui_handler.create_module_button(
                 module_name, module_class, self._handle_module_click
-                )
+            )
 
     def _handle_module_click(self, module_class: Type[BaseModule]):
         """
@@ -83,7 +83,7 @@ class AppController:
 
             # Если слот захвачен, ставим команду на создание GUI.
             # Передаем весь класс, который внутри себя будет содержать gui_run
-            # (это нужно, если модуль его использует)
+            # (это нужно, если модуль его использует).
             self.command_queue.put((self._open_module_ui, module_class))
 
         threading.Thread(target=_try_open, daemon=True).start()
@@ -95,62 +95,57 @@ class AppController:
         if not self.ui_handler:
             print(
                 "[Ошибка] `ui_handler` не инициализирован в `_open_module_ui`."
-                )
+            )
             return
 
         # Используем делегат UI для создания фрейма и получения ссылок на его
-        # части
+        # части.
         new_module_frame, body_frame, header_frame = (
             self.ui_handler.create_module_frame(module_class)
-            )
-
-        # Добавляем фрейм в список для отслеживания
-        self.pinned_module_frames.append(new_module_frame)
-
-        # Создаем кнопку "Закрыть"
-        close_button = ttk.Button(
-            header_frame,
-            text="✕",
-            width=3,
-            command=lambda f=new_module_frame: self._remove_pinned_frame(f)
-            )
-        close_button.pack(side='right')
+        )
 
         try:
-            # Вызываем логику отрисовки самого модуля
+            # Вызываем логику отрисовки самого модуля.
             module_class.initialize_frame(body_frame)
         except Exception as e:
             tk.Label(
                 body_frame,
                 text=f"Ошибка загрузки модуля:\n{e}",
                 fg="red"
-                ).pack()
+            ).pack()
 
-        # --- ИНИЦИАЦИЯ СОБЫТИЯ ПЕРЕРАСЧЕТА РАЗМЕРА ОКНА ---
-        # Проверяем, что у нас есть доступ к main_window и `_resize_event`
+        # Добавляем фрейм в список для отслеживания.
+        self.pinned_module_frames.append(new_module_frame)
+
+        # --- Инициация события перерасчета размера окна ---
+        # Проверяем, что у нас есть доступ к main_window и `_resize_event`.
         if self.main_window and hasattr(self.main_window, '_resize_event'):
-            # Генерируем событие, которое было создано в MainWindow
+            # Генерируем событие, которое было создано в MainWindow.
             self.main_window.event_generate(self.main_window._resize_event)
+
+    def get_available_slots(self):
+        """
+        Возвращает количество свободных слотов для модулей.
+        Используется в main_window.
+        """
+        return self.module_semaphore._value
 
     def _remove_pinned_frame(self, frame_to_remove: ttk.Frame):
         """
         Вспомогательный метод для удаления фрейма и освобождения слота.
         """
         # Проверка на ui_handler:
-        if frame_to_remove in self.pinned_module_frames and self.ui_handler:
-            # Используем делегат UI для физического удаления виджета
-            self.ui_handler.remove_module_frame(frame_to_remove)
-
-            # Удаляем фрейм из списка и освобождаем слот
+        if frame_to_remove in self.pinned_module_frames:
+            # Удаляем фрейм из списка и освобождаем слот.
             self.pinned_module_frames.remove(frame_to_remove)
             self.module_semaphore.release()
             print(
                 f"[Инфо] Модуль закрыт. Доступно слотов: {
                     self.module_semaphore._value}"
-                )
+            )
 
-        # --- ИНИЦИАЦИЯ СОБЫТИЯ ПЕРЕРАСЧЕТА РАЗМЕРА ОКНА ---
-        # Точно так же генерируем событие после удаления модуля
+        # --- Инициация события перерасчета размера окна ---
+        # Точно так же генерируем событие после удаления модуля.
         if self.main_window and hasattr(self.main_window, '_resize_event'):
             self.main_window.event_generate(self.main_window._resize_event)
 

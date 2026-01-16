@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Dict, Type
 
 
-# Определяем BaseModule здесь, чтобы избежать циклических импортов
-# и чтобы все модули могли легко его импортировать.
+# Определяем BaseModule здесь, чтобы избежать циклических импортов и чтобы все
+# модули могли легко его импортировать.
 class BaseModule:
     """
     Абстрактный базовый класс для всех подключаемых модулей.
@@ -15,6 +15,9 @@ class BaseModule:
     name: str = None
     label: str = None
     button_text: str = None
+    module_label: str = None
+    width: int = None  # Ширина для титула (динамический фрейм).
+    width_frame: int = None  # Ширина для всего фрейма (фиксированная ширина).
 
     @classmethod
     def initialize_frame(cls, parent_frame):
@@ -32,33 +35,33 @@ def import_modules(modules_dir: Path) -> Dict[str, Type[BaseModule]]:
     loaded_modules = {}
 
     for file_path in modules_dir.glob("*.py"):
-        # Исключаем __init__ и другие служебные файлы
+        # Исключаем __init__ и другие служебные файлы, начинающиеся на "__".
         if file_path.name.startswith('__'):
             continue
 
         try:
-            # Используем importlib для динамической загрузки
+            # Используем importlib для динамической загрузки.
             spec = importlib.util.spec_from_file_location(
                 file_path.stem,
                 file_path
-                )
+            )
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
-            # Ищем класс, наследующийся от BaseModule
+            # Ищем класс, наследующийся от BaseModule.
             for name, obj in inspect.getmembers(module, inspect.isclass):
                 # isinstance не работает с базовыми классами из importlib,
                 # поэтому используем `issubclass`, но осторожно.
                 if issubclass(obj, BaseModule) and obj is not BaseModule:
                     module_class = obj
-                    # Устанавливаем имя, если оно не задано в классе
+                    # Устанавливаем имя, если оно не задано в классе.
                     if not module_class.name:
                         module_class.name = file_path.stem
                     if not module_class.label:
                         module_class.label = module_class.name.replace(
                             '_',
                             ' '
-                            ).title()
+                        ).title()
 
                     loaded_modules[file_path.stem] = module_class
                     print(f"Загружен модуль: {file_path.stem}")

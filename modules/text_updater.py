@@ -34,8 +34,8 @@ class TextUpdaterModule(BaseModule):
                     cls.gui_run(
                         lambda: text_widget.insert(
                             tk.END, f"Сообщение из потока {i+1}\n"
-                            )
                         )
+                    )
                 except AttributeError:
                     # Запасной вариант, если gui_run не настроен
                     # Просто печатаем в консоль
@@ -46,5 +46,5 @@ class TextUpdaterModule(BaseModule):
             text="Запустить фоновую задачу",
             command=lambda: threading.Thread(
                 target=long_running_task, daemon=True).start()
-            )
+        )
         start_button.pack(pady=10)

@@ -15,7 +15,7 @@ APP_TITLE = "The F.I.R. v.2 (File Interaction Runner)"
 APP_LOGO = PROJECT_ROOT / "images" / "logo_small.png"
 
 # Геометрия приложения.
-GEOMETRY_MAIN_WINDOW = "700x300"  # Начальный/минимальный размер окна.
+GEOMETRY_MAIN_WINDOW = "700x500"  # Начальный/минимальный размер окна.
 MAIN_WINDOW_MAXSIZE = "1500x900"  # Максимальный размер окна.
 WRAPLENGHT_BUTTON = 200  # Максимальная ширина лейбла, над кнопкой модуля.
 

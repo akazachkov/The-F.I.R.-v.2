@@ -14,3 +14,4 @@ uv.lock
 # Только для локальной работы
 config_paths_name_local.toml
 _test
+.vscode

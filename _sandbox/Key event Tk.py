@@ -5,7 +5,7 @@ from tkinter import scrolledtext, ttk
 class KeyEventApp:
     """
     Код для работы с сочетаниями клавиш на английской и русской раскладках,
-    при использовании Tkinter.
+    при использовании Tkinter
     """
     def __init__(self, root):
         self.root = root
@@ -57,13 +57,10 @@ class KeyEventApp:
 
             # Предотвращаем дальнейшую обработку
             return "break"
-
         return None
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-
     app = KeyEventApp(root)
-
     root.mainloop()

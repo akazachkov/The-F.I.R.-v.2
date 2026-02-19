@@ -6,15 +6,14 @@ from config.app_config import APP_LOGO
 
 def setup_window_logo(window: tk.Tk):
     """
-    Устанавливает логотип для окна Tkinter.
+    Устанавливает логотип для окна Tkinter
 
     Args:
-        window: Главное окно Tkinter
-        APP_LOGO: Путь к файлу логотипа
+        - window - Главное окно Tkinter
     """
     try:
         # 1. Загружаем изображение
-        logo_image = Image.open(APP_LOGO)
+        logo_image = Image.open(APP_LOGO)  # APP_LOGO - путь к файлу логотипа
 
         # 2. Преобразуем в PhotoImage
         logo_photo = ImageTk.PhotoImage(logo_image)
@@ -25,6 +24,5 @@ def setup_window_logo(window: tk.Tk):
         # Сохраняем ссылку на изображение, чтобы оно не было удалено сборщиком
         # мусора
         window.logo_photo = logo_photo
-
     except Exception as e:
         print(f"Ошибка загрузки логотипа: {e}")

@@ -12,38 +12,37 @@ def copy_files(
     exclude_patterns: Optional[List[str]] = None
 ) -> List[str]:
     """
-    Универсальная функция для копирования файлов из нескольких директорий.
+    Универсальная функция для копирования файлов из нескольких директорий
 
     Args:
-        source_dirs: Список кортежей (путь_к_папке, [фильтры_имен_файлов]).
-                    Если фильтры None - копируются все файлы.
-        target_dir: Целевая директория.
-        overwrite: Разрешить перезапись существующих файлов.
-        exclude_patterns: Шаблоны для исключения файлов (напр., ["~$*"]).
+        - source_dirs - список кортежей (путь_к_папке, [фильтры_имен_файлов]).
+        Если фильтры None - копируются все файлы
+        - target_dir - целевая директория
+        - overwrite - разрешить перезапись существующих файлов
+        - exclude_patterns - шаблоны для исключения файлов (напр., ["~$*"])
 
     Returns:
-        Список сообщений о результатах копирования.
+        - Список сообщений о результатах копирования
     """
     target_dir = Path(target_dir)
     results = []
 
-    # Устанавливаем шаблоны исключения по умолчанию.
+    # Устанавливаем шаблоны исключения по умолчанию
     if exclude_patterns is None:
-        exclude_patterns = ["~$*"]  # Исключаем временные файлы MS Office.
+        exclude_patterns = ["~$*"]  # Исключаем временные файлы MS Office
 
-    # Создаем целевую директорию, если она не существует.
+    # Создаем целевую директорию, если она не существует
     target_dir.mkdir(parents=True, exist_ok=True)
 
     for source_dir, name_filters in source_dirs:
         source_path = Path(source_dir)
-
         if not source_path.exists():
             results.append(f"Ошибка: Директория {source_path} не существует")
             continue
 
-        # Определяем, какие файлы копировать.
+        # Определяем, какие файлы копировать
         if name_filters is None:
-            # Копируем все файлы, кроме исключённых.
+            # Копируем все файлы, кроме исключённых
             files_to_copy = [
                 f for f in source_path.iterdir() if f.is_file() if
                 f.is_file() and not any(
@@ -51,7 +50,7 @@ def copy_files(
                 )
             ]
         else:
-            # Копируем файлы, содержащие любое из указанных слов в имени.
+            # Копируем файлы, содержащие любое из указанных слов в имени
             files_to_copy = [
                 f for f in source_path.iterdir()
                 if f.is_file()
@@ -66,18 +65,15 @@ def copy_files(
         for file in files_to_copy:
             try:
                 dest = target_dir / file.name
-
                 if dest.exists() and not overwrite:
                     results.append(
                         f"Пропущен {file.name} (файл уже существует)"
                     )
                     continue
-
                 shutil.copy2(file, dest)
                 results.append(
                     f"Из {source_path.name} - {file.name}"
                 )
             except Exception as e:
                 results.append(f"Ошибка копирования {file.name}: {str(e)}")
-
     return results if results else ["Нет файлов для копирования"]

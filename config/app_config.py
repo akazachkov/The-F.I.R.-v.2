@@ -11,7 +11,7 @@ MODULES_DIR = PROJECT_ROOT / "modules"
 CONFIG_PATHS_NAME = PROJECT_ROOT / "config" / "config_paths_name_local.toml"
 
 # Название приложения, логотип в строке заголовка
-APP_TITLE = "P.R.I.S.M. v.1.1.0"
+APP_TITLE = "P.R.I.S.M. v.1.2.0"
 # APP_LOGO = PROJECT_ROOT / "images" / "logo.png"
 
 # Геометрия приложения

@@ -8,10 +8,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODULES_DIR = PROJECT_ROOT / "modules"
 
 # Путь к файлу с конфигурацией
-CONFIG_PATHS_NAME = PROJECT_ROOT / "config" / "config_paths_name.toml"
+CONFIG_PATHS_NAME = PROJECT_ROOT / "config" / "config_paths_name_local.toml"
 
 # Название приложения, логотип в строке заголовка
-APP_TITLE = "P.R.I.S.M. v.1.0.1"
+APP_TITLE = "P.R.I.S.M. v.1.1.0"
 # APP_LOGO = PROJECT_ROOT / "images" / "logo.png"
 
 # Геометрия приложения

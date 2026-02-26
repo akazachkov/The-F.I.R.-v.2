@@ -3,10 +3,11 @@
 import tkinter as tk
 import threading
 import queue
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import Dict, Type, List
 
 from .module_loader import import_modules, BaseModule
+from .module_api import ModuleAPI
 from config.app_config import APP_TITLE, MODULES_DIR, MAX_CONCURRENT_MODULES
 from gui.main_module import MainModuleUI
 
@@ -25,119 +26,114 @@ class AppController:
         self.pinned_module_frames: List[ttk.Frame] = []
         # 4. Ссылка на класс, отвечающий за UI
         self.ui_handler: MainModuleUI | None = None
-        self.main_window: tk.Tk | None = None  # Явно инициализируем
+        self.main_window: tk.Tk | None = None
+        self.api: ModuleAPI | None = None
 
-        # Начинаем обработку очереди в фоновом режиме
+    def set_main_window(self, window: tk.Tk) -> None:
+        """Вызывается из MainWindow после его создания."""
+        self.main_window = window
+        self.api = ModuleAPI(self, window)
         self._start_queue_processor()
 
     def _start_queue_processor(self):
-        """Запускаем внутренний цикл обработки команд из очереди"""
-        def _process():
-            while True:
-                command_func, *command_args = self.command_queue.get()
-                if command_func is None:
-                    break
-                try:
-                    command_func(*command_args)
-                except Exception as e:
-                    print(f"Ошибка в UI-команде: {e}")
-                finally:
+        """Периодическая проверка очереди команд в главном потоке."""
+        def process():
+            try:
+                while True:
+                    item = self.command_queue.get_nowait()
+                    if item is None:  # Сигнал завершения
+                        break
+                    func, *args = item
+                    try:
+                        func(*args)
+                    except Exception as e:
+                        print(f"Ошибка в UI-команде: {e}")
                     self.command_queue.task_done()
-        threading.Thread(target=_process, daemon=True).start()
+            except queue.Empty:
+                pass
+            finally:
+                if self.main_window and self.main_window.winfo_exists():
+                    self.main_window.after(100, process)
 
-    def set_main_window(self, window: tk.Tk) -> None:
-        """
-        Вызывается из MainWindow после его инициализации.
-        Это важно, чтобы мы могли безопасно взаимодействовать с окном
-        """
-        self.main_window = window
+        self.main_window.after(100, process)
 
     def create_ui(self, modules_frame: tk.Frame, content_frame: tk.Frame):
-        """Создает UI для модулей"""
+        """Создаёт интерфейс модулей на левой панели."""
         # Создаем делегат UI и передаем ему фреймы
         self.ui_handler = MainModuleUI(modules_frame, content_frame, self)
-
         self.loaded_modules = import_modules(MODULES_DIR)
-        for module_name, module_class in self.loaded_modules.items():
+        for name, cls in self.loaded_modules.items():
             # Используем делегат для создания UI-компонентов.
-            # Передаем ему ссылку на метод-обработчик, чтобы кнопка знала, что
-            # вызывать
             self.ui_handler.create_module_button(
-                module_name, module_class, self._handle_module_click
+                name, cls, self._handle_module_click
             )
 
     def _handle_module_click(self, module_class: Type[BaseModule]):
-        """Обработчик нажатия кнопки модуля"""
+        """Обработчик нажатия кнопки модуля."""
         def _try_open():
-            acquired = self.module_semaphore.acquire(blocking=True, timeout=0)
+            acquired = self.module_semaphore.acquire(blocking=False)
             if not acquired:
-                print("[Ошибка] Нет свободного слота для модуля")
+                self.command_queue.put(
+                    lambda: messagebox.showwarning(
+                        "Внимание",
+                        "Достигнуто максимальное количество открытых модулей."
+                    ),
+                )
                 return
-
-            # Если слот захвачен, ставим команду на создание GUI.
-            # Передаем весь класс, который внутри себя будет содержать gui_run
-            # (это нужно, если модуль его использует)
             self.command_queue.put((self._open_module_ui, module_class))
 
         threading.Thread(target=_try_open, daemon=True).start()
 
     def _open_module_ui(self, module_class: Type[BaseModule]):
-        """Выполняется в GUI-потоке для создания и отображения фрейма модуля"""
+        """
+        Создаёт фрейм модуля и запускает его инициализацию (выполняется в
+        GUI-потоке).
+        """
         if not self.ui_handler:
-            print(
-                "[Ошибка] `ui_handler` не инициализирован в `_open_module_ui`."
-            )
+            self.module_semaphore.release()
             return
 
-        # Используем делегат UI для создания фрейма и получения ссылок на его
-        # части
-        new_module_frame, body_frame, header_frame = (
+        # Создаём контейнер для модуля
+        container, body_frame, header_frame = (
             self.ui_handler.create_module_frame(module_class)
         )
+
         try:
-            # Вызываем логику отрисовки самого модуля
-            module_class.initialize_frame(body_frame)
+            # Передаём API в модуль
+            module_class.initialize_frame(body_frame, api=self.api)
         except Exception as e:
+            # При ошибке показываем сообщение и удаляем фрейм
             tk.Label(
                 body_frame,
                 text=f"Ошибка загрузки модуля:\n{e}",
                 fg="red"
             ).pack()
+            # Не добавляем в список, освобождаем слот и удаляем контейнер
+            self.module_semaphore.release()
+            container.destroy()
+            return
 
-        # Добавляем фрейм в список для отслеживания
-        self.pinned_module_frames.append(new_module_frame)
-
-        # --- Инициация события перерасчета размера окна ---
-        # Проверяем, что у нас есть доступ к main_window и `_resize_event`
+        # Успешно создан – добавляем в список и генерируем событие изменения
+        # размера
+        self.pinned_module_frames.append(container)
         if self.main_window and hasattr(self.main_window, '_resize_event'):
-            # Генерируем событие, которое было создано в MainWindow
             self.main_window.event_generate(self.main_window._resize_event)
 
     def get_available_slots(self):
-        """
-        Возвращает количество свободных слотов для модулей.
-        Используется в main_window
-        """
+        """Возвращает количество свободных слотов."""
         return self.module_semaphore._value
 
     def _remove_pinned_frame(self, frame_to_remove: ttk.Frame):
-        """Вспомогательный метод для удаления фрейма и освобождения слота"""
-        # Проверка на ui_handler:
+        """Удаляет фрейм из списка активных и освобождает слот."""
         if frame_to_remove in self.pinned_module_frames:
-            # Удаляем фрейм из списка и освобождаем слот
             self.pinned_module_frames.remove(frame_to_remove)
             self.module_semaphore.release()
-            print(
-                f"[Инфо] Модуль закрыт. Доступно слотов: {
-                    self.module_semaphore._value}"
-            )
 
-        # --- Инициация события перерасчета размера окна ---
-        # Точно так же генерируем событие после удаления модуля
+        # После удаления модуля, инициируем событие перерасчета размера окна
         if self.main_window and hasattr(self.main_window, '_resize_event'):
             self.main_window.event_generate(self.main_window._resize_event)
 
     def on_app_close(self):
-        """Вызывается при закрытии приложения"""
+        """Вызывается при закрытии приложения."""
         self.command_queue.put((None,))
         print("Приложение закрывается.")

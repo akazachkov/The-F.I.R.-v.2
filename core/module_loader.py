@@ -10,7 +10,9 @@ from typing import Dict, Type
 # модули могли легко его импортировать
 class BaseModule:
     """
-    Абстрактный базовый класс для всех подключаемых модулей
+    Абстрактный базовый класс для всех подключаемых модулей.
+    Все модули должны наследоваться от этого класса и реализовывать
+    метод initialize_frame.
     """
     name: str = None
     label: str = None
@@ -20,14 +22,19 @@ class BaseModule:
     width_frame: int = None  # Ширина для всего фрейма (фиксированная ширина)
 
     @classmethod
-    def initialize_frame(cls, parent_frame):
-        pass
+    def initialize_frame(cls, parent_frame, api):
+        """
+        Инициализирует интерфейс модуля внутри parent_frame.
+        :param parent_frame: родительский фрейм (ttk.Frame)
+        :param api: объект ModuleAPI для взаимодействия с приложением
+        """
+        raise NotImplementedError("Модуль должен реализовать initialize_frame")
 
 
 def import_modules(modules_dir: Path) -> Dict[str, Type[BaseModule]]:
     """
     Сканирует папку с модулями и импортирует все Python-файлы.
-    Возвращает словарь {имя_модуля: класс_модуля}
+    Возвращает словарь {имя_модуля: класс_модуля}.
     """
     loaded_modules = {}
     for file_path in modules_dir.glob("*.py"):
@@ -57,7 +64,6 @@ def import_modules(modules_dir: Path) -> Dict[str, Type[BaseModule]]:
                             '_',
                             ' '
                         ).title()
-
                     loaded_modules[file_path.stem] = module_class
                     print(f"Загружен модуль: {file_path.stem}")
         except Exception as e:

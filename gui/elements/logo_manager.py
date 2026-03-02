@@ -6,10 +6,10 @@ from config.app_config import APP_LOGO
 
 def setup_window_logo(window: tk.Tk):
     """
-    Устанавливает логотип для окна Tkinter
+    Устанавливает логотип для окна Tkinter.
 
     Args:
-        - window - Главное окно Tkinter
+    :param window: главное окно Tkinter
     """
     try:
         # 1. Загружаем изображение

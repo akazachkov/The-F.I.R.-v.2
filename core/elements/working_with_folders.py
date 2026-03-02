@@ -8,11 +8,11 @@ from tkinter import messagebox
 
 def ensure_directory_exists(base_path, subfolder):
     """
-    Создает директорию, если она не существует
+    Создает директорию, если она не существует.
 
     Args:
-        - base_path - путь к базовой директории
-        - subfolder - имя новой поддиректории
+    :param base_path - путь к базовой директории
+    :param subfolder - имя новой поддиректории
     """
     directory = Path(f"{base_path}/{subfolder}")
     directory.mkdir(parents=True, exist_ok=True)
@@ -21,13 +21,13 @@ def ensure_directory_exists(base_path, subfolder):
 
 def open_file_and_folder(path: str | Path) -> bool:
     """
-    Открывает указанную директорию или файл в Проводнике Windows
+    Открывает указанную директорию или файл в Проводнике Windows.
 
     Args:
-        - path - строка или Path-объект, указывающий на директорию
+    :param path - строка или Path-объект, указывающий на директорию
 
     Returns:
-        - bool - True, если команда была успешно запущена, иначе False
+        bool: True, если команда была успешно запущена, иначе False
     """
     try:
         # Нормализуем путь, преобразуя его в Windows-совместимый вид
@@ -57,7 +57,7 @@ def open_file_and_folder(path: str | Path) -> bool:
 def parse_file_path(file_path: str | Path):
     """
     Парсит путь к файлу для извлечения базовой директории, числа (номера) и
-    аббревиатуры
+    аббревиатуры.
     """
     try:
         path_obj = Path(file_path)

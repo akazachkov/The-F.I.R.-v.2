@@ -11,11 +11,11 @@ MODULES_DIR = PROJECT_ROOT / "modules"
 CONFIG_PATHS_NAME = PROJECT_ROOT / "config" / "config_paths_name.toml"
 
 # Название приложения, логотип в строке заголовка
-APP_TITLE = "P.R.I.S.M. v.1.0.1"
+APP_TITLE = "P.R.I.S.M. v.1.2.1"
 # APP_LOGO = PROJECT_ROOT / "images" / "logo.png"
 
 # Геометрия приложения
-GEOMETRY_MAIN_WINDOW = "800x800"  # Начальный/минимальный размер окна
+GEOMETRY_MAIN_WINDOW = "800x850"  # Начальный/минимальный размер окна (ШхВ)
 MAIN_WINDOW_MAXSIZE = "1920x1920"  # Максимальный размер окна
 WRAPLENGHT_BUTTON = 200  # Максимальная ширина лейбла, над кнопкой модуля
 

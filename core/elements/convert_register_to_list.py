@@ -8,11 +8,11 @@ from openpyxl.utils import get_column_letter
 
 def transform_excel_list(input_fn, output_file):
     """
-    Функция для конвертации ведомости в список
+    Функция для конвертации ведомости в список.
 
     Args:
-        - input_fn (filename) - имя исходного файла, включая путь до него
-        - output_file - имя выходного файла, включая путь до него
+    :param input_fn (filename): имя исходного файла, включая путь до него
+    :param output_file: имя выходного файла, включая путь до него
     """
     wb_out = None  # Инициализация переменной перед try-блоком
 

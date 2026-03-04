@@ -2,13 +2,14 @@
 
 import threading
 import traceback
+from tkinter import messagebox
 from typing import Callable, Optional, Any
 
 
 class BackgroundTaskManager:
     """
-    Менеджер для выполнения длительных задач в фоновом потоке
-    и возврата результата в главный поток через API.
+    Менеджер для выполнения длительных задач в фоновом потоке и возврата
+    результата в главный поток через API.
     """
 
     def __init__(self, api):
@@ -56,8 +57,7 @@ class BackgroundTaskManager:
                 else:
                     # По умолчанию показываем всплывающее окно с ошибкой
                     self._api.schedule_gui_task(
-                        lambda err: self._api.messagebox.showerror(
-                            "Ошибка", err),
+                        lambda err: messagebox.showerror("Ошибка", err),
                         str(e)
                     )
 

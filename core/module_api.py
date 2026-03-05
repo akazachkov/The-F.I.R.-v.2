@@ -3,12 +3,13 @@
 import datetime
 import tomllib
 from pathlib import Path
-from typing import Any, List, Tuple, Union, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from config.app_config import CONFIG_PATHS_NAME
 from core.elements.background_task import BackgroundTaskManager
 from core.elements.convert_register_to_list import transform_excel_list
 from core.elements.copy_files import copy_files
+from core.elements.excel_reader import ExcelReader
 from core.elements.working_with_folders import (
     ensure_directory_exists,
     open_file_and_folder,
@@ -76,7 +77,7 @@ class ModuleAPI:
         return copy_files(source_dirs, target_dir, overwrite, exclude_patterns)
 
     # ------------------------------------------------------------------
-    # Конвертация ведомости в список
+    # Работа с файлами Excel
     # ------------------------------------------------------------------
     def transform_excel_list(
             self,
@@ -85,6 +86,42 @@ class ModuleAPI:
     ) -> None:
         """Преобразует ведомость в список оборудования."""
         transform_excel_list(input_fn, output_file)
+
+    def read_excel_mapping(
+        self,
+        file_path: Union[str, Path],
+        sheet_name: str,
+        key_col: int,
+        value_col: int,
+        start_row: int = 2,
+        validator: Optional[Callable] = None,
+        default: Any = None
+    ) -> Dict[str, Any]:
+        """
+        Читает Excel-файл (поддерживаются .xlsx и .xlsb) и возвращает
+        словарь соответствия из двух столбцов.
+
+        :param file_path: путь к файлу
+        :param sheet_name: имя листа
+        :param key_col: номер столбца с ключом (1-based)
+        :param value_col: номер столбца со значением (1-based)
+        :param start_row: строка начала данных (по умолчанию 2 – после
+            заголовка)
+        :param validator: функция, принимающая значение и возвращающая True,
+            если его следует использовать (иначе подставляется default)
+        :param default: значение по умолчанию для не прошедших валидацию
+
+        :return: словарь {ключ: значение}
+        """
+        with ExcelReader(file_path) as reader:
+            return reader.get_mapping(
+                sheet_name=sheet_name,
+                key_col=key_col,
+                value_col=value_col,
+                start_row=start_row,
+                validator=validator,
+                default=default
+            )
 
     # ------------------------------------------------------------------
     # Управление слотами и окном

@@ -1,4 +1,4 @@
-# core/elements/pdf_finder.py
+# app/core/elements/pdf_finder.py
 
 from pathlib import Path
 import re
@@ -57,15 +57,15 @@ class PDFFinder:
             if not year_path.exists():
                 return label, []
             found = []
-            num_pattern = re.compile(r'^(\d+)')
             for item in year_path.iterdir():
                 if not item.is_dir():
                     continue
-                match = num_pattern.match(item.name)
+                # Извлекаем от 1 до 4 цифр с начала имени
+                match = re.match(r'^(\d{1,4})', item.name)
                 if not match:
                     continue
-                folder_num = match.group(1)
-                folder_padded = folder_num.zfill(4)
+                folder_digits = match.group(1)
+                folder_padded = folder_digits.zfill(4)
                 if folder_padded == padded:
                     subfolder = item / self.subfolder_name
                     if subfolder.exists():
@@ -90,7 +90,6 @@ class PDFFinder:
     def find_for_numbers(
         self, numbers: List[str], target_year: Optional[str] = None
     ) -> Tuple[Dict[str, Dict[str, List[Tuple[Path, str]]]], List[str]]:
-        # Нормализуем входные номера
         normalized_numbers = [self.normalize_number(num) for num in numbers]
         years_to_search = [target_year] if target_year else self.year_labels
         result_by_number = {norm: {} for norm in normalized_numbers}
@@ -104,11 +103,11 @@ class PDFFinder:
             for item in year_path.iterdir():
                 if not item.is_dir():
                     continue
-                match = re.match(r'^(\d+)', item.name)
+                match = re.match(r'^(\d{1,4})', item.name)
                 if not match:
                     continue
-                folder_num = match.group(1)
-                folder_padded = folder_num.zfill(4)
+                folder_digits = match.group(1)
+                folder_padded = folder_digits.zfill(4)
                 if folder_padded not in result_by_number:
                     continue
 

@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Union, List, Dict, Any, Optional, Callable
 
-import openpyxl
+from openpyxl import load_workbook
 from pyxlsb import open_workbook as open_xlsb
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class ExcelReader:
         else:
             # Для xlsx и xlsm используем openpyxl в режиме read_only
             # Это позволяет избежать ошибок, связанных с pivot-кэшами
-            self._workbook = openpyxl.load_workbook(
+            self._workbook = load_workbook(
                 self.file_path,
                 data_only=True,
                 read_only=True,

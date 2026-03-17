@@ -1,11 +1,9 @@
 # app/core/module_api.py
 
 import datetime
-import tomllib
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from config.app_config import CONFIG_PATHS_NAME
 from core.elements.background_task import BackgroundTaskManager
 from core.elements.convert_register_to_list import transform_excel_list
 from core.elements.copy_files import copy_files
@@ -26,19 +24,16 @@ class ModuleAPI:
         self._controller = controller
         self._main_window = main_window
         self._bg_manager = BackgroundTaskManager(self)
-        self._config = None
 
     # ------------------------------------------------------------------
     # Конфигурация
     # ------------------------------------------------------------------
     def get_config(self, key: str = None) -> Any:
         """Возвращает значение конфигурации по ключу или весь словарь."""
-        if self._config is None:
-            with open(CONFIG_PATHS_NAME, "rb") as f:
-                self._config = tomllib.load(f)
+        config = self._controller._config
         if key is None:
-            return self._config
-        return self._config.get(key)
+            return config
+        return config.get(key)
 
     # ------------------------------------------------------------------
     # Работа с папками и файлами

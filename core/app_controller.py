@@ -1,8 +1,10 @@
 # app/core/app_controller.py
 
+import tomllib
 import tkinter as tk
 import threading
 import queue
+from pathlib import Path
 from tkinter import ttk, messagebox
 from typing import Dict, Type, List
 
@@ -13,9 +15,13 @@ from gui.main_module import MainModuleUI
 
 
 class AppController:
-    def __init__(self):
+    def __init__(self, config_path: Path):
         self.app_title = APP_TITLE
         self.loaded_modules: Dict[str, Type[BaseModule]] = {}
+
+        # --- Загрузка конфигурации ---
+        self.config_path = config_path
+        self._config = self._load_config()
 
         # --- Атрибуты для управления семафором ---
         # 1. Семафор с определенным количеством "разрешений" на запуск
@@ -30,6 +36,11 @@ class AppController:
         self.api: ModuleAPI | None = None
         self.notebook = None
         self.opened_tabs: List[ttk.Frame] = []
+
+    def _load_config(self):
+        """Загружает конфигурацию из TOML-файла."""
+        with open(self.config_path, "rb") as f:
+            return tomllib.load(f)
 
     def set_main_window(self, window: tk.Tk) -> None:
         """Вызывается из MainWindow после его создания."""
@@ -61,11 +72,24 @@ class AppController:
 
     def create_ui(self, modules_frame: tk.Frame, content_frame: tk.Frame):
         """Создаёт интерфейс модулей на левой панели."""
-        # Создаем делегат UI и передаем ему фреймы
         self.ui_handler = MainModuleUI(modules_frame, content_frame, self)
         self.loaded_modules = import_modules(MODULES_DIR)
-        for name, cls in self.loaded_modules.items():
-            # Используем делегат для создания UI-компонентов.
+
+        # Получаем список порядка модулей из конфигурации
+        module_order = self._config.get("module_order", [])
+
+        # Создаём словарь для быстрого поиска индекса
+        order_index = {name: i for i, name in enumerate(module_order)}
+
+        def sort_key(item):
+            name, cls = item
+            # Модули, не попавшие в список, отправляются в конец
+            idx = order_index.get(name, len(module_order))
+            return (idx, name)   # дополнительно сортируем по имени
+
+        sorted_modules = sorted(self.loaded_modules.items(), key=sort_key)
+
+        for name, cls in sorted_modules:
             self.ui_handler.create_module_button(
                 name, cls, self._handle_module_click
             )

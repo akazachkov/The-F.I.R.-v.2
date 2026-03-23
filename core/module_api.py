@@ -138,7 +138,7 @@ class ModuleAPI:
         config = self.get_config()
         return PDFFinder(
             root_folder=config.get("folder_ktd", ""),
-            year_labels=config.get("years", []),
+            year_labels=config.get("years_ktd", []),
             subfolder_name=config.get("subfolder_name", "")
         )
 

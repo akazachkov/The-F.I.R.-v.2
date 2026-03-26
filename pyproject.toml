@@ -10,4 +10,5 @@ dependencies = [
     "pandas>=2.3.3",
     "pillow>=12.1.0",
     "pyxlsb>=1.0.10",
+    "pywin32>=311"
 ]
